@@ -35,6 +35,35 @@ def random_string(length=10):
     letters = string.ascii_letters  # This includes both lowercase and uppercase letters.
     return ''.join(random.choice(letters) for i in range(length))
 
+def make_alphanum(str):
+    asc = str.encode("ascii", errors="ignore").decode()
+    return ''.join(e for e in asc if e.isalnum())
+
+def save_song_metadata(song_metadata):
+    image_url = song_metadata['image_url']
+    image_data = requests.get(image_url).content
+
+    title = song_metadata['title']
+    artist = "".join(song_metadata['artist'])
+    album = song_metadata['album']
+
+    # Check if the covers directory exists, if not create it
+    if not os.path.exists("downloads/covers"):
+        os.makedirs("downloads/covers")
+
+    hash = title + artist + album
+    hash = make_alphanum(hash)
+    hash = hash.lower()
+    output_image_path = "downloads/covers/" + hash + ".jpg"
+
+    # Check if the song cover already exists, if it does, skip saving it
+    if os.path.exists(output_image_path):
+        return
+
+    # Write image data to disk
+    with open(output_image_path, 'wb') as image_handler:
+        image_handler.write(image_data)
+
 def resave_audio_clip_with_metadata(audio_input_path, song_metadata, song_output_path, audio_quality):
 
     temporary_audio_path = "./temp/" + random_string(20) + ".mp3"
@@ -50,6 +79,10 @@ def resave_audio_clip_with_metadata(audio_input_path, song_metadata, song_output
     # Setting album cover from the provided image_url
     image_url = song_metadata['image_url']
     image_data = requests.get(image_url).content
+
+    # Save the image data as the album cover and other data
+    save_song_metadata(song_metadata)
+
     audiofile.tag.images.set(ImageFrame.FRONT_COVER, image_data, 'image/jpeg', "Cover Image from Spotify")
 
     # Setting title, artist, and album details

@@ -1,8 +1,8 @@
 from const import colours
-from pytube.exceptions import AgeRestrictedError
+from pytubefix.exceptions import AgeRestrictedError
 from exceptions import SpotifyAlbumNotFound, SpotifyTrackNotFound, SpotifyPlaylistNotFound, ConfigVideoMaxLength, ConfigVideoLowViewCount, YoutubeItemNotFound
 from apis.spotify import Spotify
-from utils import resave_audio_clip_with_metadata
+from utils import resave_audio_clip_with_metadata, save_song_metadata
 import sys
 import os
 import shutil
@@ -175,6 +175,7 @@ class SpotifyDownloader():
 
             self.prep_folder(output_path)
             if self.file_exists(track_path):
+                save_song_metadata(track.get_metadata())
                 print(f"{colours.OKCYAN}   - File exists, skipping.")
                 return True
                 

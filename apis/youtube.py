@@ -50,7 +50,7 @@ class YouTube:
         return youtube_video_link
     
     def download(self, url, audio_bitrate):
-        youtube_video = pytubeYouTube(url, use_po_token=True)
+        youtube_video = pytubeYouTube(url, use_oauth=True, allow_oauth_cache=True)
 
         if youtube_video.age_restricted:
             youtube_video.bypass_age_gate()

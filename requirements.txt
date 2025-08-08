@@ -28,4 +28,4 @@ python-Levenshtein==0.21.0
 tekore==5.0.0
 flask==2.3.3
 Werkzeug==2.3.7
-pytubefix==8.13.1
+pytubefix==9.3.0

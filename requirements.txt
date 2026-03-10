@@ -20,12 +20,12 @@ requests==2.32.3
 soupsieve==2.5
 toml==0.10.2
 tqdm==4.66.1
-urllib3==2.2.3
+urllib3==2.6.3
 youtube-search==2.1.2
 lxml==4.9.3
 fuzzywuzzy==0.18.0
 python-Levenshtein==0.21.0
 tekore==5.0.0
 flask==2.3.3
-Werkzeug==2.3.7
-pytubefix==9.3.0
+Werkzeug==3.1.5
+pytubefix==9.5.1

@@ -21,7 +21,7 @@ auths = {}  # Auth attempts. Stores data across spotify login
 flask_process = None
 
 cfg_filename = 'tekore_cfg.ini'
-app_host = "localhost"
+app_host = "127.0.0.1"
 app_port = 5000
 app_url = f'http://{app_host}:{app_port}'
 login_redirect_url = f'{app_url}/callback'

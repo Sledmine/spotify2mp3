@@ -45,6 +45,27 @@
   </h4>
 </div>
 
+<!-- Important Notice -->
+## ⚠️ Important: Spotify Premium Now Required for API Access
+
+Spotify has introduced significant changes to their Web API platform. **The owner of the Spotify developer app must have an active Spotify Premium subscription** for apps in [Development Mode](https://developer.spotify.com/documentation/web-api/concepts/quota-modes) to function.
+
+If the app owner's account does not have Premium, **all API requests will fail with a 403 error**:
+
+> `Active premium subscription required for the owner of the app.`
+
+This affects **every endpoint** - not just user-specific ones. Public playlists, tracks, albums, and all other resources will be blocked.
+
+### What you need to know
+
+- The Spotify account that **created the developer app** (Client ID / Client Secret) must have **Premium**.
+- Free-tier Spotify accounts **can no longer use the Web API** in Development Mode.
+- After subscribing (or re-subscribing) to Premium, it can take **a few hours** before API access is restored.
+
+Be aware of this if you are looking for a free solution to download Spotify playlists.
+
+---
+
 <!-- Getting Started -->
 ## 	:toolbox: Getting Started
 

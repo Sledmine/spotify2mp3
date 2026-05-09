@@ -10,6 +10,12 @@
   </h4>
 </div>
 
+**NOTE:** This is a fork of the original spotify2mp3 project, which is no longer maintained. It was made
+only with the intention to fit my needs for downloading my Spotify playlists, I have no plan to
+commit to maintaining this project in the long term, but I have been adding a few features and fixes
+here and there, expect some vibe coding and some questionable design decisions
+(I'll try to keep quality in line), but hey, it works and it's free, so enjoy!
+
 <!-- Important Notice -->
 ## ⚠️ Important: Spotify Premium Now Required for API Access
 
@@ -29,11 +35,6 @@ This affects **every endpoint** - not just user-specific ones. Public playlists,
 
 Be aware of this if you are looking for a free solution to download Spotify playlists.
 
-**NOTE:** This is a fork of the original spotify2mp3 project, which is no longer maintained. It was made
-only with the intention to fit my needs for downloading my Spotify playlists, I have no plan to
-commit to maintaining this project in the long term, but I have been adding a few features and fixes
-here and there, expect some vibe coding and some questionable design decisions
-(I'll try to keep quality in line), but hey, it works and it's free, so enjoy!
 
 ---
 

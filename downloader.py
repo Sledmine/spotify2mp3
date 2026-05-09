@@ -18,7 +18,7 @@ ssl._create_default_https_context = ssl._create_stdlib_context
 
 
 class SpotifyDownloader():
-    def __init__(self, spotify: Spotify, youtube: YouTube, audio_quality=1000000, max_length=60*30, min_view_count=10000, proxy: str = "socks5://34.174.40.246:1080"):
+    def __init__(self, spotify: Spotify, youtube: YouTube, audio_quality=1000000, max_length=60*30, min_view_count=10000, proxy: str = None):
         self.spotify_client = spotify
         self.youtube_client = youtube
         self.audio_quality = audio_quality

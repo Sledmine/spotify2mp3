@@ -106,34 +106,59 @@ class YouTube:
     
         return youtube_video_link
     
+    # Ordered list of proxies to try on download failure
+    FALLBACK_PROXIES = [
+        "socks5://34.174.40.246:1080",
+        "socks5://142.248.80.110:1080",
+        "socks5://45.83.140.16:1080",
+        "socks5://23.175.248.21:1080",
+        "socks5://104.233.195.149:1080",
+        "socks5://152.53.53.166:1080",
+        "socks5://51.15.20.32:1088",
+        "socks5://146.103.125.38:1080",
+    ]
+
     def download(self, url, audio_bitrate, proxy: str = "socks5://34.174.40.246:1080"):
-        if proxy:
-            _install_proxy_patch(proxy)
+        proxies_to_try = [proxy] if proxy else []
+        # append fallbacks that aren't already the primary
+        for p in self.FALLBACK_PROXIES:
+            if p not in proxies_to_try:
+                proxies_to_try.append(p)
 
-        try:
-            youtube_video = pytubeYouTube(url, use_oauth=True, allow_oauth_cache=True)
-
-            if youtube_video.age_restricted:
-                youtube_video.bypass_age_gate()
-            youtube_video_streams = youtube_video.streams.filter(only_audio=True)
-
-            correctIndex = 0
-
-            selected_bitrate_normalised = audio_bitrate / 1000
-
-            #select the best audio quality
-            finalKbps = 0
-            correctIndex = 0
-            for i,vid in enumerate(youtube_video_streams):
-                currKbps = int(re.sub("[^0-9]", "", vid.abr))
-                if currKbps <= selected_bitrate_normalised:
-                    correctIndex = i
-                    finalKbps = currKbps
-
-            video_stream = youtube_video_streams[correctIndex]
-
-            yt_tmp_out = video_stream.download(output_path="./temp/")
-            return yt_tmp_out, finalKbps * 1000
-        finally:
-            if proxy:
+        last_error = None
+        for attempt, current_proxy in enumerate(proxies_to_try):
+            if attempt > 0:
+                print(f"   - Retrying with fallback proxy [{attempt}/{len(proxies_to_try)-1}]: {current_proxy}")
+            _install_proxy_patch(current_proxy)
+            try:
+                return self._do_download(url, audio_bitrate)
+            except Exception as e:
+                last_error = e
+                print(f"   - Proxy {current_proxy} failed: {e}")
+            finally:
                 _remove_proxy_patch()
+
+        raise Exception(f"All proxies failed. Last error: {last_error}")
+
+    def _do_download(self, url, audio_bitrate):
+        # ANDROID_VR: no JS player cipher needed, no po_token needed — avoids
+        # cipher pattern mismatches on newer YouTube player versions
+        youtube_video = pytubeYouTube(url, use_oauth=False, client='ANDROID_VR')
+
+        if youtube_video.age_restricted:
+            youtube_video.bypass_age_gate()
+        youtube_video_streams = youtube_video.streams.filter(only_audio=True)
+
+        selected_bitrate_normalised = audio_bitrate / 1000
+
+        finalKbps = 0
+        correctIndex = 0
+        for i, vid in enumerate(youtube_video_streams):
+            currKbps = int(re.sub("[^0-9]", "", vid.abr))
+            if currKbps <= selected_bitrate_normalised:
+                correctIndex = i
+                finalKbps = currKbps
+
+        video_stream = youtube_video_streams[correctIndex]
+        yt_tmp_out = video_stream.download(output_path="./temp/")
+        return yt_tmp_out, finalKbps * 1000

@@ -18,12 +18,13 @@ ssl._create_default_https_context = ssl._create_stdlib_context
 
 
 class SpotifyDownloader():
-    def __init__(self, spotify: Spotify, youtube: YouTube, audio_quality=1000000, max_length=60*30, min_view_count=10000):
+    def __init__(self, spotify: Spotify, youtube: YouTube, audio_quality=1000000, max_length=60*30, min_view_count=10000, proxy: str = "socks5://34.174.40.246:1080"):
         self.spotify_client = spotify
         self.youtube_client = youtube
         self.audio_quality = audio_quality
         self.max_length = max_length
         self.min_view_count = min_view_count
+        self.proxy = proxy
 
     def download_album(self, playlist_url):
         
@@ -187,7 +188,7 @@ class SpotifyDownloader():
 
             print(f"{colours.ENDC}   - Downloading, please wait{colours.ENDC}")
 
-            video_downloaded_path, self.audio_quality = self.youtube_client.download(youtube_link, self.audio_quality)
+            video_downloaded_path, self.audio_quality = self.youtube_client.download(youtube_link, self.audio_quality, proxy=self.proxy)
 
             # consider updating searchable name to something nicer for the end user
 

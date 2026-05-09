@@ -1,47 +1,12 @@
 <div align="center">
-
   <img src="assets/logo.png" alt="logo" width="250" height="auto" />  
   <p>
-    Simple, free, and unlimited Spotify MP3 downloads
+    Simple and unlimited Spotify MP3 downloads
   </p>
-  
-  
-<!-- Badges -->
-<p>
-  <a href="https://github.com/couldbejake/spotify2mp3/graphs/contributors">
-    <img src="https://img.shields.io/github/contributors/couldbejake/spotify2mp3" alt="contributors" />
-  </a>
-
-  <!--
-  <a href="">
-    <img src="https://img.shields.io/github/last-commit/couldbejake/spotify2mp3" alt="last update" />
-  </a>
-  -->
-  
-  <a href="https://github.com/couldbejake/spotify2mp3/network/members">
-    <img src="https://img.shields.io/github/forks/couldbejake/spotify2mp3" alt="forks" />
-  </a>
-  
-  <a href="https://github.com/couldbejake/spotify2mp3/stargazers">
-    <img src="https://img.shields.io/github/stars/couldbejake/spotify2mp3" alt="stars" />
-  </a>
-  
-  <a href="https://github.com/couldbejake/spotify2mp3/issues/">
-    <img src="https://img.shields.io/github/issues/couldbejake/spotify2mp3" alt="open issues" />
-  </a>
-  
-  <!--
-  <a href="https://github.com/couldbejake/awesome-readme-template/blob/master/LICENSE">
-    <img src="https://img.shields.io/github/license/couldbejake/awesome-readme-template.svg" alt="license" />
-  </a>-->
 </p>
    
 <h4>
-    <a href="https://github.com/couldbejake/spotify2mp3/issues">Report Bug</a>
-  <span> · </span>
-    <a href="https://github.com/couldbejake/spotify2mp3/issues/new">Request Feature</a>
-  <span> · </span>
-    <a href="https://www.buymeacoffee.com/couldbejake">Support this project</a>
+    <a href="https://github.com/Sledmine/spotify2mp3/issues">Report Bug</a>
   </h4>
 </div>
 
@@ -64,6 +29,12 @@ This affects **every endpoint** - not just user-specific ones. Public playlists,
 
 Be aware of this if you are looking for a free solution to download Spotify playlists.
 
+**NOTE:** This is a fork of the original spotify2mp3 project, which is no longer maintained. It was made
+only with the intention to fit my needs for downloading my Spotify playlists, I have no plan to
+commit to maintaining this project in the long term, but I have been adding a few features and fixes
+here and there, expect some vibe coding and some questionable design decisions
+(I'll try to keep quality in line), but hey, it works and it's free, so enjoy!
+
 ---
 
 <!-- Getting Started -->
@@ -72,7 +43,7 @@ Be aware of this if you are looking for a free solution to download Spotify play
 <!-- Prerequisites -->
 ### :bangbang: Prerequisites
 
-1. Ideally use Python 3.8
+1. Ideally use Python 3.10 or higher.
 2. Install git.
    - Windows: https://git-scm.com/download/win
    - Ubuntu: It should come pre-installed
@@ -83,7 +54,7 @@ Be aware of this if you are looking for a free solution to download Spotify play
 
 Clone the project
 
-`$ git clone https://github.com/couldbejake/spotify2mp3.git`
+`$ git clone https://github.com/Sledmine/spotify2mp3.git`
 
 <!-- Installation -->
 ### :gear: Installation
@@ -122,12 +93,11 @@ On mobile:
 
 ## Troubleshooting
 
-If you have any issues at all, please post a full log <a href="https://github.com/couldbejake/spotify2mp3/issues">here</a>
-
-Support this project
-
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/couldbejake)
+If you have any issues at all, please post a full log <a href="https://github.com/Sledmine/spotify2mp3/issues">here</a>
 
 ## Coming soon
 
-Documentation for the spotify2mp3 Python API.
+- Documentation for the spotify2mp3 Python API.
+- Refactor of the codebase to be more modular and maintainable.
+- Local server to handle API requests and downloads, allowing for integration with other applications and services.
+- Frontend interface for integration with other playlists providers like YouTube Music, SoundCloud, etc.

@@ -444,10 +444,11 @@ socks5://218.78.65.202:6688
 socks5://221.134.152.75:7302
 socks5://222.71.131.131:1080]]
 
-local TEST_URL = "https://api.iplocate.io/ip"
-local TIMEOUT  = 5   -- seconds per proxy
-local PARALLEL = 50   -- max concurrent curl jobs
-local TMP_DIR  = "/tmp/proxy_test_" .. os.time()
+local IPCHECK_URL = "https://api.iplocate.io/ip"
+local YT_URL      = "https://www.youtube.com/generate_204"  -- lightweight 204 endpoint, no body
+local TIMEOUT     = 8   -- seconds per proxy
+local PARALLEL    = 50   -- max concurrent curl jobs
+local TMP_DIR     = "/tmp/proxy_test_" .. os.time()
 
 os.execute("mkdir -p " .. TMP_DIR)
 
@@ -460,26 +461,45 @@ end
 
 print(string.format("Testing %d proxies (parallel=%d, timeout=%ds)\n", #list, PARALLEL, TIMEOUT))
 
--- launch a curl job; writes time_total to a result file
-local function launch(proxy, idx)
-    local out = TMP_DIR .. "/" .. idx
+-- Phase 1: launch iplocate check (validates proxy is alive & returns a real IP)
+local function launch_ipcheck(proxy, idx)
+    local out = TMP_DIR .. "/ip_" .. idx
     local cmd = string.format(
         'curl -s --max-time %d --proxy "%s" -w "\n%%{time_total}" "%s" > "%s" 2>/dev/null &',
-        TIMEOUT, proxy, TEST_URL, out
+        TIMEOUT, proxy, IPCHECK_URL, out
     )
     os.execute(cmd)
 end
 
-local function read_result(idx)
-    local f = io.open(TMP_DIR .. "/" .. idx, "r")
+-- Phase 2: launch YouTube check (validates proxy can actually reach YT)
+local function launch_ytcheck(proxy, idx)
+    local out = TMP_DIR .. "/yt_" .. idx
+    local cmd = string.format(
+        'curl -s -o /dev/null --max-time %d --proxy "%s" -w "%%{http_code} %%{time_total}" "%s" > "%s" 2>/dev/null &',
+        TIMEOUT, proxy, YT_URL, out
+    )
+    os.execute(cmd)
+end
+
+local function read_ipcheck(idx)
+    local f = io.open(TMP_DIR .. "/ip_" .. idx, "r")
     if not f then return nil end
-    local v = f:read("*a")
-    f:close()
-    -- file format: <body>\n<time_total>
+    local v = f:read("*a"); f:close()
     local body, time_str = v:match("^(.-)\n([%d%.]+)%s*$")
     if not body or not time_str then return nil end
-    -- body must look like an IP address (digits and dots)
     if not body:match("^%d+%.%d+%.%d+%.%d+$") then return nil end
+    return tonumber(time_str)
+end
+
+local function read_ytcheck(idx)
+    local f = io.open(TMP_DIR .. "/yt_" .. idx, "r")
+    if not f then return nil end
+    local v = f:read("*a"); f:close()
+    -- format: "200 0.456" or "204 0.321"
+    local code, time_str = v:match("^(%d+)%s+([%d%.]+)%s*$")
+    if not code or not time_str then return nil end
+    -- YouTube /generate_204 returns 204; some proxies may return 200 (cached)
+    if code ~= "204" and code ~= "200" then return nil end
     return tonumber(time_str)
 end
 
@@ -491,40 +511,71 @@ while i <= #list do
     local batch_end = math.min(i + PARALLEL - 1, #list)
     local batch_size = batch_end - i + 1
 
-    print(string.format("\n[Batch %d-%d / %d] Launching %d requests...",
-        i, batch_end, #list, batch_size))
+    print(string.format("\n[Batch %d-%d / %d] Phase 1: IP check...", i, batch_end, #list))
 
+    -- Phase 1: launch ip checks in parallel
     for j = i, batch_end do
-        launch(list[j], j)
+        launch_ipcheck(list[j], j)
     end
 
-    -- poll every second; print results as they arrive
-    local reported = {}
-    local elapsed  = 0
+    local ip_passed = {}
+    local reported  = {}
+    local elapsed   = 0
     while elapsed <= TIMEOUT do
         os.execute("sleep 1")
         elapsed = elapsed + 1
-
         for j = i, batch_end do
             if not reported[j] then
-                local t = read_result(j)
+                local t = read_ipcheck(j)
                 if t then
                     reported[j] = true
-                    done_total = done_total + 1
-                    print(string.format("  [%d/%d done] %.3fs  OK   %s",
-                        done_total, #list, t, list[j]))
-                    results[#results + 1] = { proxy = list[j], time = t }
+                    ip_passed[j] = true
+                    io.write(string.format("  ip ok  %.3fs  %s\n", t, list[j]))
                 end
             end
         end
     end
-
-    -- mark remaining as failed
     for j = i, batch_end do
         if not reported[j] then
-            done_total = done_total + 1
-            print(string.format("  [%d/%d done]         FAIL %s",
-                done_total, #list, list[j]))
+            io.write(string.format("  ip fail        %s\n", list[j]))
+        end
+    end
+
+    -- Phase 2: YouTube check only on proxies that passed Phase 1
+    local yt_candidates = {}
+    for j = i, batch_end do
+        if ip_passed[j] then yt_candidates[#yt_candidates + 1] = j end
+    end
+
+    if #yt_candidates > 0 then
+        print(string.format("\n  Phase 2: YouTube check on %d passing proxies...", #yt_candidates))
+        for _, j in ipairs(yt_candidates) do
+            launch_ytcheck(list[j], j)
+        end
+
+        local yt_reported = {}
+        elapsed = 0
+        while elapsed <= TIMEOUT do
+            os.execute("sleep 1")
+            elapsed = elapsed + 1
+            for _, j in ipairs(yt_candidates) do
+                if not yt_reported[j] then
+                    local t = read_ytcheck(j)
+                    if t then
+                        yt_reported[j] = true
+                        done_total = done_total + 1
+                        print(string.format("  [%d/%d] yt ok  %.3fs  %s",
+                            done_total, #list, t, list[j]))
+                        results[#results + 1] = { proxy = list[j], time = t }
+                    end
+                end
+            end
+        end
+        for _, j in ipairs(yt_candidates) do
+            if not yt_reported[j] then
+                done_total = done_total + 1
+                print(string.format("  [%d/%d] yt fail       %s", done_total, #list, list[j]))
+            end
         end
     end
 

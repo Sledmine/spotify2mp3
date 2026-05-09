@@ -7,8 +7,16 @@ import re
 import socket
 
 import ssl
-
 import socks
+
+# Clients tried per proxy in order. ANDROID_VR skips JS player cipher entirely.
+# TV (oauth) is the fallback if YouTube flags the proxy IP as a bot.
+_CLIENTS = [
+    {'client': 'ANDROID_VR', 'use_oauth': False},
+    {'client': 'TV',         'use_oauth': True,  'allow_oauth_cache': True},
+]
+
+import random
 
 
 _original_socket = socket.socket
@@ -106,7 +114,7 @@ class YouTube:
     
         return youtube_video_link
     
-    # Ordered list of proxies to try on download failure
+    # Pool of proxies - shuffled on each download so no single IP always gets hit first
     FALLBACK_PROXIES = [
         "socks5://34.174.40.246:1080",
         "socks5://142.248.80.110:1080",
@@ -118,12 +126,13 @@ class YouTube:
         "socks5://146.103.125.38:1080",
     ]
 
-    def download(self, url, audio_bitrate, proxy: str = "socks5://34.174.40.246:1080"):
-        proxies_to_try = [proxy] if proxy else []
-        # append fallbacks that aren't already the primary
-        for p in self.FALLBACK_PROXIES:
-            if p not in proxies_to_try:
-                proxies_to_try.append(p)
+    def download(self, url, audio_bitrate, proxy: str = None):
+        # Build pool: configured proxy first (if any), then the rest shuffled
+        pool = list(self.FALLBACK_PROXIES)
+        if proxy and proxy in pool:
+            pool.remove(proxy)
+        random.shuffle(pool)
+        proxies_to_try = ([proxy] if proxy else []) + pool
 
         last_error = None
         for attempt, current_proxy in enumerate(proxies_to_try):
@@ -131,19 +140,29 @@ class YouTube:
                 print(f"   - Retrying with fallback proxy [{attempt}/{len(proxies_to_try)-1}]: {current_proxy}")
             _install_proxy_patch(current_proxy)
             try:
-                return self._do_download(url, audio_bitrate)
+                # Try each client in order for this proxy
+                for client_cfg in _CLIENTS:
+                    try:
+                        return self._do_download(url, audio_bitrate, **client_cfg)
+                    except Exception as client_err:
+                        err_str = str(client_err)
+                        # Only fall through to next client on bot/auth errors
+                        if any(k in err_str for k in ('429', 'bot', 'sign in', 'login', 'BotDetection', 'LoginRequired')):
+                            print(f"   - Client {client_cfg['client']} blocked on {current_proxy}: {client_err}")
+                            continue
+                        raise  # real error - propagate immediately
+                last_error = Exception(f"All clients blocked on {current_proxy}")
+                print(f"   - {last_error}")
             except Exception as e:
                 last_error = e
                 print(f"   - Proxy {current_proxy} failed: {e}")
             finally:
                 _remove_proxy_patch()
 
-        raise Exception(f"All proxies failed. Last error: {last_error}")
+        raise Exception(f"All proxies exhausted. Last error: {last_error}")
 
-    def _do_download(self, url, audio_bitrate):
-        # ANDROID_VR: no JS player cipher needed, no po_token needed — avoids
-        # cipher pattern mismatches on newer YouTube player versions
-        youtube_video = pytubeYouTube(url, use_oauth=False, client='ANDROID_VR')
+    def _do_download(self, url, audio_bitrate, client='ANDROID_VR', use_oauth=False, allow_oauth_cache=False):
+        youtube_video = pytubeYouTube(url, use_oauth=use_oauth, allow_oauth_cache=allow_oauth_cache, client=client)
 
         if youtube_video.age_restricted:
             youtube_video.bypass_age_gate()
